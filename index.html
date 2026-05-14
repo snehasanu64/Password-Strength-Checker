@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Strength Checker</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 12px;
+      padding: 30px;
+      width: 100%;
+      max-width: 450px;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 14px;
+      font-family: monospace;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #7c83f5;
+    }
+
+    input::placeholder {
+      color: #4b5563;
+    }
+
+    .strength-bar {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 15px;
+    }
+
+    .segment {
+      flex: 1;
+      height: 6px;
+      background: #2d3148;
+      border-radius: 3px;
+      transition: background 0.3s;
+    }
+
+    .segment.weak {
+      background: #e24b4a;
+    }
+
+    .segment.fair {
+      background: #ef9f27;
+    }
+
+    .segment.strong {
+      background: #639922;
+    }
+
+    .segment.very-strong {
+      background: #1d9e75;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      font-size: 13px;
+    }
+
+    .strength-label {
+      font-weight: bold;
+      color: #4b5563;
+    }
+
+    .strength-label.weak {
+      color: #e24b4a;
+    }
+
+    .strength-label.fair {
+      color: #ef9f27;
+    }
+
+    .strength-label.strong {
+      color: #639922;
+    }
+
+    .strength-label.very-strong {
+      color: #1d9e75;
+    }
+
+    .stat {
+      color: #6b7280;
+    }
+
+    .requirements {
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      font-size: 13px;
+    }
+
+    .req-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #6b7280;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+
+    .requirement {
+      padding: 5px 0;
+      color: #4b5563;
+    }
+
+    .requirement.pass {
+      color: #1d9e75;
+    }
+
+    .warning {
+      background: #2d1e0a;
+      border: 1px solid #6b3a10;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 15px;
+      font-size: 13px;
+      color: #f5a623;
+      display: none;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 11px 15px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+
+    .btn-generate {
+      flex: 1;
+      background: #7c83f5;
+      color: white;
+    }
+
+    .btn-generate:hover {
+      background: #6970e8;
+    }
+
+    .btn-copy {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      color: #9ca3af;
+    }
+
+    .btn-copy:hover {
+      background: #0f1117;
+      color: #e2e8f0;
+    }
+
+    .btn-copy.copied {
+      color: #1d9e75;
+      border-color: #1d9e75;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: #374151;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Password Strength Checker</h1>
+  <p class="subtitle">100% client-side • Nothing sent to servers</p>
+  
+  <input type="password" id="password" placeholder="Enter your password...">
+  
+  <div class="strength-bar">
+    <div class="segment" id="seg1"></div>
+    <div class="segment" id="seg2"></div>
+    <div class="segment" id="seg3"></div>
+    <div class="segment" id="seg4"></div>
+  </div>
+  
+  <div class="info-row">
+    <span class="strength-label" id="strengthLabel">No password</span>
+    <span class="stat" id="charCount">0 chars</span>
+  </div>
+  
+  <div class="info-row">
+    <span class="stat">Entropy: <strong id="entropy">—</strong> bits</span>
+    <span class="stat">Crack time: <strong id="crackTime">—</strong></span>
+  </div>
+  
+  <div class="requirements">
+    <div class="req-title">Requirements</div>
+    <div class="requirement" id="req-len">✗ At least 8 characters</div>
+    <div class="requirement" id="req-upper">✗ Uppercase (A-Z)</div>
+    <div class="requirement" id="req-lower">✗ Lowercase (a-z)</div>
+    <div class="requirement" id="req-number">✗ Number (0-9)</div>
+    <div class="requirement" id="req-special">✗ Special character (!@#$)</div>
+    <div class="requirement" id="req-long">✗ 12+ characters</div>
+  </div>
+  
+  <div class="warning" id="warning">⚠ Common password — choose something unique!</div>
+  
+  <div class="buttons">
+    <button class="btn-generate" id="generateBtn">Generate Password</button>
+    <button class="btn-copy" id="copyBtn">Copy</button>
+  </div>
+  
+  <p class="footer">Uses crypto.getRandomValues() for secure generation</p>
+</div>
+
+<script>
+const commonPasswords = new Set([
+  'password','123456','password1','qwerty','abc123','letmein','monkey','111111',
+  'master','iloveyou','sunshine','princess','welcome','shadow','dragon','pass',
+  'hello','admin','login','test','12345678','1234567890','password123','000000'
+]);
+
+const passwordInput = document.getElementById('password');
+const strengthLabel = document.getElementById('strengthLabel');
+const charCount = document.getElementById('charCount');
+const entropyDisplay = document.getElementById('entropy');
+const crackTimeDisplay = document.getElementById('crackTime');
+const warning = document.getElementById('warning');
+const generateBtn = document.getElementById('generateBtn');
+const copyBtn = document.getElementById('copyBtn');
+
+const segments = [
+  document.getElementById('seg1'),
+  document.getElementById('seg2'),
+  document.getElementById('seg3'),
+  document.getElementById('seg4')
+];
+
+const requirements = {
+  len: document.getElementById('req-len'),
+  upper: document.getElementById('req-upper'),
+  lower: document.getElementById('req-lower'),
+  number: document.getElementById('req-number'),
+  special: document.getElementById('req-special'),
+  long: document.getElementById('req-long')
+};
+
+function calculateStrength(password) {
+  let pool = 0;
+  if (/[a-z]/.test(password)) pool += 26;
+  if (/[A-Z]/.test(password)) pool += 26;
+  if (/[0-9]/.test(password)) pool += 10;
+  if (/[^a-zA-Z0-9]/.test(password)) pool += 33;
+  return pool > 0 ? Math.round(password.length * Math.log2(pool)) : 0;
+}
+
+function estimateCrackTime(bits) {
+  const combos = Math.pow(2, bits);
+  const perSecond = 1e10;
+  const seconds = combos / perSecond;
+  
+  if (seconds < 1) return 'Instant';
+  if (seconds < 60) return Math.round(seconds) + 's';
+  if (seconds < 3600) return Math.round(seconds / 60) + 'm';
+  if (seconds < 86400) return Math.round(seconds / 3600) + 'h';
+  if (seconds < 31536000) return Math.round(seconds / 86400) + 'd';
+  return Math.round(seconds / 31536000) + 'y';
+}
+
+function checkRequirements(password) {
+  const checks = {
+    len: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[^a-zA-Z0-9]/.test(password),
+    long: password.length >= 12
+  };
+  
+  for (let key in checks) {
+    const elem = requirements[key];
+    const passed = checks[key];
+    elem.classList.toggle('pass', passed);
+    elem.textContent = (passed ? '✓' : '✗') + ' ' + elem.textContent.substring(2);
+  }
+  
+  return checks;
+}
+
+function calculateScore(password, checks) {
+  let score = 0;
+  if (checks.len) score++;
+  if (checks.upper && checks.lower) score++;
+  if (checks.number) score++;
+  if (checks.special) score++;
+  
+  const bits = calculateStrength(password);
+  if (bits >= 60) score = Math.max(score, 3);
+  if (bits >= 80) score = 4;
+  
+  return Math.min(score, 4);
+}
+
+function updateDisplay() {
+  const password = passwordInput.value;
+  
+  if (!password) {
+    strengthLabel.textContent = 'No password';
+    strengthLabel.className = 'strength-label';
+    charCount.textContent = '0 chars';
+    entropyDisplay.textContent = '—';
+    crackTimeDisplay.textContent = '—';
+    segments.forEach(seg => seg.className = 'segment');
+    warning.style.display = 'none';
+    return;
+  }
+  
+  charCount.textContent = password.length + ' chars';
+  
+  const checks = checkRequirements(password);
+  
+  const score = calculateScore(password, checks);
+  const isCommon = commonPasswords.has(password.toLowerCase());
+  const finalScore = isCommon ? 1 : score;
+  
+  const labels = ['', 'Weak', 'Fair', 'Strong', 'Very Strong'];
+  const classes = ['', 'weak', 'fair', 'strong', 'very-strong'];
+  strengthLabel.textContent = labels[finalScore];
+  strengthLabel.className = 'strength-label ' + classes[finalScore];
+  
+  segments.forEach((seg, i) => {
+    seg.className = 'segment';
+    if (i < finalScore) seg.classList.add(classes[finalScore]);
+  });
+  
+  const bits = calculateStrength(password);
+  entropyDisplay.textContent = bits + ' bits';
+  crackTimeDisplay.textContent = estimateCrackTime(bits);
+  
+  warning.style.display = isCommon ? 'block' : 'none';
+}
+
+generateBtn.addEventListener('click', () => {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%^&*';
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let password = '';
+  for (let i = 0; i < 16; i++) {
+    password += chars[bytes[i] % chars.length];
+  }
+  passwordInput.value = password;
+  passwordInput.type = 'text';
+  updateDisplay();
+});
+
+copyBtn.addEventListener('click', () => {
+  if (!passwordInput.value) return;
+  navigator.clipboard.writeText(passwordInput.value);
+  copyBtn.textContent = 'Copied!';
+  copyBtn.classList.add('copied');
+  setTimeout(() => {
+    copyBtn.textContent = 'Copy';
+    copyBtn.classList.remove('copied');
+  }, 1500);
+});
+
+passwordInput.addEventListener('input', updateDisplay);
+</script>
+</body>
+</html>
